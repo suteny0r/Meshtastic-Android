@@ -441,14 +441,14 @@ private fun handleQuickChatAction(
     onSendMessage: (String) -> Unit,
 ) {
     val hasVariables =
-        action.message.contains("%LAT", ignoreCase = true) ||
-            action.message.contains("%LON", ignoreCase = true) ||
-            action.message.contains("%GPS", ignoreCase = true) ||
-            action.message.contains("%DATE", ignoreCase = true) ||
-            action.message.contains("%SNAME", ignoreCase = true) ||
-            action.message.contains("%LNAME", ignoreCase = true) ||
-            action.message.contains("%SNAMEENC", ignoreCase = true) ||
-            action.message.contains("%LNAMEENC", ignoreCase = true)
+        action.message.contains("%LAT%", ignoreCase = true) ||
+            action.message.contains("%LON%", ignoreCase = true) ||
+            action.message.contains("%GPS%", ignoreCase = true) ||
+            action.message.contains("%DATE%", ignoreCase = true) ||
+            action.message.contains("%SHORT_NAME%", ignoreCase = true) ||
+            action.message.contains("%LONG_NAME%", ignoreCase = true) ||
+            action.message.contains("%SHORT_NAME_ENC%", ignoreCase = true) ||
+            action.message.contains("%LONG_NAME_ENC%", ignoreCase = true)
 
     val processedMessage =
         if (hasVariables) {
@@ -456,21 +456,21 @@ private fun handleQuickChatAction(
             userPosition?.let {
                 val latitude = "%.7f".format(it.latitudeI * 1e-7)
                 val longitude = "%.7f".format(it.longitudeI * 1e-7)
-                result = result.replace("%GPS", "$latitude,$longitude", ignoreCase = true)
+                result = result.replace("%GPS%", "$latitude,$longitude", ignoreCase = true)
                 result =
-                    result.replace("%LAT", latitude, ignoreCase = true).replace("%LON", longitude, ignoreCase = true)
+                    result.replace("%LAT%", latitude, ignoreCase = true).replace("%LON%", longitude, ignoreCase = true)
             }
             // Date/time substitution - always available
             val dateFormat = SimpleDateFormat("MM/dd/yy HH:mm", Locale.getDefault())
             val dateString = dateFormat.format(Date())
-            result = result.replace("%DATE", dateString, ignoreCase = true)
+            result = result.replace("%DATE%", dateString, ignoreCase = true)
             ourNode?.user?.shortName?.let { shortName ->
-                result = result.replace("%SNAMEENC", Uri.encode(shortName), ignoreCase = true)
-                result = result.replace("%SNAME", shortName, ignoreCase = true)
+                result = result.replace("%SHORT_NAME_ENC%", Uri.encode(shortName), ignoreCase = true)
+                result = result.replace("%SHORT_NAME%", shortName, ignoreCase = true)
             }
             ourNode?.user?.longName?.let { longName ->
-                result = result.replace("%LNAMEENC", Uri.encode(longName), ignoreCase = true)
-                result = result.replace("%LNAME", longName, ignoreCase = true)
+                result = result.replace("%LONG_NAME_ENC%", Uri.encode(longName), ignoreCase = true)
+                result = result.replace("%LONG_NAME%", longName, ignoreCase = true)
             }
             result
         } else {
@@ -760,9 +760,9 @@ private fun QuickChatRow(
     LazyRow(modifier = modifier.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         items(allActions, key = { it.position }) { action ->
             val requiresPosition =
-                action.message.contains("%LAT", ignoreCase = true) ||
-                    action.message.contains("%LON", ignoreCase = true) ||
-                    action.message.contains("%GPS", ignoreCase = true)
+                action.message.contains("%LAT%", ignoreCase = true) ||
+                    action.message.contains("%LON%", ignoreCase = true) ||
+                    action.message.contains("%GPS%", ignoreCase = true)
             val isEnabled = enabled && (!requiresPosition || userPosition != null)
             Button(onClick = { onClick(action) }, enabled = isEnabled) { Text(text = action.name) }
         }
