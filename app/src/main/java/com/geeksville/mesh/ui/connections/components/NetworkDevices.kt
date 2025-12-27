@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.geeksville.mesh.model.BTScanModel
 import com.geeksville.mesh.model.DeviceListEntry
 import com.geeksville.mesh.repository.network.NetworkRepository
-import com.geeksville.mesh.ui.connections.isIPAddress
+import com.geeksville.mesh.ui.connections.isValidHost
 import kotlinx.coroutines.launch
 import org.meshtastic.core.service.ConnectionState
 import org.meshtastic.core.strings.R
@@ -179,8 +179,8 @@ private fun AddDeviceDialog(
                     state = ipState,
                     labelPosition = TextFieldLabelPosition.Above(),
                     lineLimits = TextFieldLineLimits.SingleLine,
-                    label = { Text(stringResource(R.string.ip_address)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                    label = { Text(stringResource(R.string.host_address)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
                     modifier = Modifier.weight(.7f),
                 )
 
@@ -204,7 +204,7 @@ private fun AddDeviceDialog(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         val ipAddress = ipState.text.toString()
-                        if (ipAddress.isIPAddress()) {
+                        if (ipAddress.isValidHost()) {
                             val portString = portState.text.toString()
 
                             val combinedString =

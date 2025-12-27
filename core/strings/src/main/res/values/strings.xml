@@ -204,6 +204,7 @@
     <string name="device_sleeping">Device sleeping</string>
     <string name="connected_count">Connected: %1$s online</string>
     <string name="ip_address">IP Address:</string>
+    <string name="host_address">Host:</string>
     <string name="ip_port">Port:</string>
     <string name="connected">Connected</string>
     <string name="connected_to">Connected to radio (%s)</string>

@@ -75,11 +75,18 @@ import org.meshtastic.feature.settings.radio.RadioConfigViewModel
 import org.meshtastic.feature.settings.radio.component.PacketResponseStateDialog
 import org.meshtastic.proto.ConfigProtos
 
-fun String?.isIPAddress(): Boolean = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-    @Suppress("DEPRECATION")
-    this != null && Patterns.IP_ADDRESS.matcher(this).matches()
-} else {
-    InetAddresses.isNumericAddress(this.toString())
+fun String?.isValidHost(): Boolean {
+    if (this.isNullOrBlank()) return false
+    // Accept valid IP addresses
+    val isIp = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        @Suppress("DEPRECATION")
+        Patterns.IP_ADDRESS.matcher(this).matches()
+    } else {
+        InetAddresses.isNumericAddress(this)
+    }
+    if (isIp) return true
+    // Accept valid domain names (FQDNs)
+    return Patterns.DOMAIN_NAME.matcher(this).matches()
 }
 
 /**
