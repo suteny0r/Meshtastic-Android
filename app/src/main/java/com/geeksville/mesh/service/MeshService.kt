@@ -788,7 +788,8 @@ class MeshService : Service() {
                             serviceRepository.setErrorMessage(getString(R.string.error_duty_cycle))
                         }
 
-                        handleAckNak(data.requestId, fromId, u.errorReasonValue)
+                        Timber.d("ROUTING_APP: packet.from=${packet.from}, packet.relayNode=${packet.relayNode}, fromId=$fromId")
+                        handleAckNak(data.requestId, fromId, u.errorReasonValue, packet.relayNode)
                         packetHandler.removeResponse(data.requestId, complete = true)
                     }
 
@@ -1101,20 +1102,47 @@ class MeshService : Service() {
     }
 
     /** Handle an ack/nak packet by updating sent message status */
-    private fun handleAckNak(requestId: Int, fromId: String, routingError: Int) {
+    private fun handleAckNak(requestId: Int, fromId: String, routingError: Int, relayNode: Int) {
         serviceScope.handledLaunch {
             val isAck = routingError == MeshProtos.Routing.Error.NONE_VALUE
             val p = packetRepository.get().getPacketById(requestId)
+            Timber.d("handleAckNak: requestId=$requestId, fromId=$fromId, routingError=$routingError, isAck=$isAck, relayNode=0x${relayNode.toString(16)}")
+            Timber.d("handleAckNak: packet data.from=${p?.data?.from}, data.to=${p?.data?.to}, currentStatus=${p?.data?.status}")
+
+            // Find nodes whose last byte of nodeNum matches the relay node byte
+            val matchingNodes = if (relayNode != 0) {
+                nodeDBbyNodeNum.filter { (nodeNum, _) ->
+                    (nodeNum and 0xFF) == relayNode
+                }.values.toList()
+            } else {
+                emptyList()
+            }
+            Timber.d("handleAckNak: relayNode=0x${relayNode.toString(16)}, matchingNodes=${matchingNodes.map { "0x${it.num.toString(16)} (${it.user.shortName})" }}")
+
             // distinguish real ACKs coming from the intended receiver
+            val isDirectAck = isAck && fromId == p?.data?.to
             val m =
                 when {
-                    isAck && fromId == p?.data?.to -> MessageStatus.RECEIVED
+                    isDirectAck -> MessageStatus.RECEIVED
                     isAck -> MessageStatus.DELIVERED
                     else -> MessageStatus.ERROR
                 }
+
+            // Determine ackBy: for direct ACKs use the recipient (fromId), for relay ACKs use relay node matching
+            val ackByValue = when {
+                isDirectAck -> fromId // DM acknowledged directly by intended recipient
+                matchingNodes.size == 1 -> matchingNodes.first().user.id
+                matchingNodes.size > 1 -> matchingNodes.joinToString(",") { it.user.id }
+                else -> fromId // fallback to original behavior
+            }
+            Timber.d("handleAckNak: newStatus=$m, ackByValue=$ackByValue")
             if (p != null && p.data.status != MessageStatus.RECEIVED) {
                 p.data.status = m
                 p.routingError = routingError
+                if (isAck) {
+                    p.ackBy = ackByValue
+                    Timber.d("handleAckNak: storing ackBy=$ackByValue")
+                }
                 packetRepository.get().update(p)
             }
             serviceBroadcasts.broadcastMessageStatus(requestId, m)

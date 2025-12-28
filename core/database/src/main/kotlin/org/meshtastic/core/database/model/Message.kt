@@ -64,6 +64,9 @@ data class Message(
     val replyId: Int?,
     val originalMessage: Message? = null,
     val viaMqtt: Boolean = false,
+    val ackByNodes: List<Node> = emptyList(),
+    val isBroadcast: Boolean = false,
+    val toNode: Node? = null, // For DMs, the intended recipient
 ) {
     fun getStatusStringRes(): Pair<Int, Int> {
         val title = if (routingError > 0) R.string.error else R.string.message_delivery_status

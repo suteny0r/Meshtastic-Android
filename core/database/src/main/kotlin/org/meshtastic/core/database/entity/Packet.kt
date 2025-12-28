@@ -36,6 +36,19 @@ data class PacketEntity(
 ) {
     suspend fun toMessage(getNode: suspend (userId: String?) -> Node) = with(packet) {
         val node = getNode(data.from)
+        val isBroadcast = data.to == DataPacket.ID_BROADCAST
+        // ackBy can be a single ID or comma-separated list of IDs (when multiple nodes match relay byte)
+        val ackByNodes = ackBy.takeIf { it.isNotEmpty() }?.let { ackByStr ->
+            ackByStr.split(",").mapNotNull { id ->
+                runCatching { getNode(id.trim()) }.getOrNull()
+            }
+        } ?: emptyList()
+        // For DMs, get the intended recipient node
+        val toNode = if (!isBroadcast && data.to != null) {
+            runCatching { getNode(data.to) }.getOrNull()
+        } else {
+            null
+        }
         Message(
             uuid = uuid,
             receivedTime = received_time,
@@ -53,6 +66,9 @@ data class PacketEntity(
             emojis = reactions.toReaction(getNode),
             replyId = data.replyId,
             viaMqtt = node.viaMqtt,
+            ackByNodes = ackByNodes,
+            isBroadcast = isBroadcast,
+            toNode = toNode,
         )
     }
 }
@@ -76,6 +92,7 @@ data class Packet(
     @ColumnInfo(name = "snr", defaultValue = "0") val snr: Float = 0f,
     @ColumnInfo(name = "rssi", defaultValue = "0") val rssi: Int = 0,
     @ColumnInfo(name = "hopsAway", defaultValue = "-1") val hopsAway: Int = -1,
+    @ColumnInfo(name = "ack_by", defaultValue = "") var ackBy: String = "",
 )
 
 @Suppress("ConstructorParameterNaming")

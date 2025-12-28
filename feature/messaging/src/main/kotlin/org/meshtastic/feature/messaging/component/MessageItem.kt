@@ -53,6 +53,7 @@ import org.meshtastic.core.database.entity.Reaction
 import org.meshtastic.core.database.model.Message
 import org.meshtastic.core.database.model.Node
 import org.meshtastic.core.model.MessageStatus
+import org.meshtastic.core.model.util.DistanceUnit
 import org.meshtastic.core.strings.R
 import org.meshtastic.core.ui.component.AutoLinkText
 import org.meshtastic.core.ui.component.NodeChip
@@ -190,6 +191,49 @@ internal fun MessageItem(
                                 Text(text = "\uD83D\uDD14", modifier = Modifier.padding(end = 4.dp))
                             }
                             Text(text = message.time, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    // Show acknowledger info for messages that have been acknowledged
+                    val isReceived = message.status == MessageStatus.RECEIVED
+                    val isDelivered = message.status == MessageStatus.DELIVERED
+                    val showAckInfo = message.fromLocal && (isReceived || isDelivered) && message.ackByNodes.isNotEmpty()
+                    if (showAckInfo) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val ackText = when {
+                                // DM with RECEIVED status - confirmed by intended recipient
+                                !message.isBroadcast && isReceived && message.ackByNodes.size == 1 -> {
+                                    val ackByNode = message.ackByNodes.first()
+                                    val distanceStr = ourNode.distanceStr(ackByNode, DistanceUnit.getFromLocale())
+                                    stringResource(
+                                        R.string.received_by_template,
+                                        ackByNode.user.shortName,
+                                        distanceStr ?: stringResource(R.string.unknown_distance),
+                                    )
+                                }
+                                // Single relay node (broadcast DELIVERED or DM DELIVERED)
+                                message.ackByNodes.size == 1 -> {
+                                    val ackByNode = message.ackByNodes.first()
+                                    val distanceStr = ourNode.distanceStr(ackByNode, DistanceUnit.getFromLocale())
+                                    stringResource(
+                                        R.string.ack_by_template,
+                                        ackByNode.user.shortName,
+                                        distanceStr ?: stringResource(R.string.unknown_distance),
+                                    )
+                                }
+                                // Multiple possible relayers - show all short names
+                                else -> {
+                                    val names = message.ackByNodes.joinToString(" or ") { it.user.shortName }
+                                    stringResource(R.string.ack_by_multiple_template, names)
+                                }
+                            }
+                            Text(
+                                text = ackText,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
                     }
                 }

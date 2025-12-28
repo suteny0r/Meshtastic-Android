@@ -352,6 +352,10 @@
     <string name="logs">Logs</string>
     <string name="hops_away">Hops Away</string>
     <string name="hops_away_template">Hops Away: %1$d</string>
+    <string name="ack_by_template">Ack\'d by %1$s (%2$s)</string>
+    <string name="ack_by_multiple_template">Ack\'d by %1$s</string>
+    <string name="received_by_template">Received by %1$s (%2$s)</string>
+    <string name="unknown_distance">unknown</string>
     <string name="info">Information</string>
     <string name="ch_util_definition">Utilization for the current channel, including well formed TX, RX and malformed RX (aka noise).</string>
     <string name="air_util_definition">Percent of airtime for transmission used within the last hour.</string>
